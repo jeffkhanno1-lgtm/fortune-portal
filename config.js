@@ -16,3 +16,7 @@ async function login(role,onOk){
  $('#auth').classList.remove('hide');$('#app').classList.add('hide')}
 async function signIn(role,onOk){const{error}=await sb.auth.signInWithPassword({email:$('#em').value,password:$('#pw').value});if(error)return toast(error.message);login(role,onOk)}
 async function signOut(){await sb.auth.signOut();location.reload()}
+
+const fmt=s=>{let h='',o=false;String(s||'').split('\n').forEach(l=>{const m=l.match(/^\s*[-•*]\s+(.*)/);if(m){if(!o){h+='<ul>';o=true}h+='<li>'+esc(m[1])+'</li>'}else{if(o){h+='</ul>';o=false}if(l.trim())h+='<p>'+esc(l)+'</p>'}});return h+(o?'</ul>':'')};
+function tg(h){const a=h.parentNode;a.classList.toggle('open');h.querySelector('i').textContent=a.classList.contains('open')?'−':'+'}
+async function upLogo(f){const n=Date.now()+'-'+f.name.replace(/[^\w.]/g,'_');const{error}=await sb.storage.from('logos').upload(n,f);if(error){toast(error.message);return null}return sb.storage.from('logos').getPublicUrl(n).data.publicUrl}
