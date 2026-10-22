@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fortune Academy – Admin</title><link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script></head><body>
+<header><b>Fortune Academy · Admin</b><button id="out" class="gold hide" onclick="signOut()">Log out</button></header><main>
+<div id="auth" class="card hide" style="max-width:380px;margin:40px auto"><h2>Admin Login</h2><label>Email</label><input id="em" type="email"><label>Password</label><input id="pw" type="password"><button class="gold" onclick="signIn('admin',init)">Log in</button></div>
+<div id="app" class="hide"><nav><button data-t="st">Students</button><button data-t="gr">Grades</button><button data-t="pr">Programs & Courses</button><button data-t="sw">Swap Requests</button></nav>
+<section id="st" class="tab card"><h2>Students</h2><div id="stl" style="overflow:auto"></div></section>
+<section id="gr" class="tab card hide"><h2>Grades</h2><select id="gs" onchange="gload()"></select><div id="gd"></div></section>
+<section id="pr" class="tab card hide"><h2>Programs</h2><div class="grid"><div><label>Name</label><input id="pn"></div><div><label>Outline</label><input id="po"></div><div><label>Start date</label><input id="ps" type="date"></div><div><label>End date</label><input id="pe" type="date"></div></div><button class="gold" onclick="addProg()">Add program</button><div id="pl"></div></section>
+<section id="sw" class="tab card hide"><h2>Swap requests</h2><div id="swl"></div></section></div></main>
+<script src="config.js"></script><script>
+const STAT=['Submitted','Processed','Enrolled','Completed','Rejected'],EX=['Not Started','Scheduled','Passed','Failed'];
+let ST=[];login('admin',init);
+const opt=(a,v)=>a.map(x=>`<option ${x==v?'selected':''}>${x}</option>`).join('');
+function init(){$('#out').classList.remove('hide');tabs(()=>{stud();progs();swaps()})}
+async function stud(){const{data}=await sb.from('students').select('*,programs(name),profiles(org)').order('created_at',{ascending:false});ST=data||[];
+ $('#stl').innerHTML=`<table><tr><th>Partner</th><th>Name</th><th>Email</th><th>Phone</th><th>DTC ID</th><th>Program</th><th>Status</th><th>Final exam</th><th></th></tr>${ST.map(s=>`<tr id="r${s.id}"><td>${esc(s.profiles?.org)}</td>${['name','email','phone','dtc_id'].map(k=>`<td><input data-k="${k}" value="${esc(s[k])}"></td>`).join('')}<td>${esc(s.programs?.name)}</td><td><select data-k="status">${opt(STAT,s.status)}</select></td><td><select data-k="final_exam">${opt(EX,s.final_exam)}</select></td><td><button onclick="saveS(${s.id})">Save</button> <button onclick="delS(${s.id})" style="background:#9a1c1c">✕</button></td></tr>`).join('')}</table>`;
+ $('#gs').innerHTML=ST.map(s=>`<option value="${s.id}">${esc(s.name)} (${esc(s.dtc_id)})</option>`).join('');gload()}
+async function saveS(id){const o={};document.querySelectorAll(`#r${id} [data-k]`).forEach(e=>o[e.dataset.k]=e.value);const{error}=await sb.from('students').update(o).eq('id',id);toast(error?error.message:'Saved')}
+async function delS(id){if(confirm('Delete student?')){await sb.from('students').delete().eq('id',id);stud()}}
+async function gload(){const s=ST.find(x=>x.id==$('#gs').value);if(!s){$('#gd').innerHTML='';return}
+ const[{data:c},{data:g}]=await Promise.all([sb.from('courses').select('*,assessments(*)').eq('program_id',s.program_id),sb.from('grades').select('*').eq('student_id',s.id)]);
+ const gm=Object.fromEntries((g||[]).map(x=>[x.assessment_id,x]));
+ $('#gd').innerHTML=(c||[]).map(k=>`<h3>${esc(k.name)}</h3><table>${k.assessments.map(a=>`<tr><td>${esc(a.name)}</td><td><input class="sc" data-a="${a.id}" type="number" placeholder="Score /${a.max_score}" value="${gm[a.id]?.score??''}"></td><td><input class="gd" data-a="${a.id}" placeholder="Grade" value="${esc(gm[a.id]?.grade||'')}"></td></tr>`).join('')}</table>`).join('')+'<br><button class="gold" onclick="saveG()">Save grades</button>'}
+async function saveG(){const sid=$('#gs').value,rows=[];document.querySelectorAll('.sc').forEach(e=>{const g=document.querySelector(`.gd[data-a="${e.dataset.a}"]`).value;if(e.value!==''||g)rows.push({student_id:sid,assessment_id:e.dataset.a,score:e.value===''?null:e.value,grade:g})});
+ const{error}=await sb.from('grades').upsert(rows);toast(error?error.message:'Grades saved')}
+async function addProg(){const{error}=await sb.from('programs').insert({name:$('#pn').value,outline:$('#po').value,start_date:$('#ps').value||null,end_date:$('#pe').value||null});toast(error?error.message:'Program added');progs()}
+async function progs(){const{data}=await sb.from('programs').select('*,courses(*,assessments(*))').order('id');
+ $('#pl').innerHTML=(data||[]).map(p=>`<div class="card" style="background:#f7f9fc"><b>${esc(p.name)}</b> ${p.start_date||''} → ${p.end_date||''} <button onclick="editP(${p.id})">Edit</button> <button onclick="addC(${p.id})">+ Course</button><br><small>${esc(p.outline)}</small>${p.courses.map(c=>`<p>📘 ${esc(c.name)} — <small>${esc(c.outline)}</small> <button onclick="addA(${c.id})">+ Assessment</button><br>${c.assessments.map(a=>`<span class="tag">${esc(a.name)} /${a.max_score}</span> `).join('')}</p>`).join('')}</div>`).join('')}
+async function addC(id){const n=prompt('Course name');if(!n)return;await sb.from('courses').insert({program_id:id,name:n,outline:prompt('Course outline')||''});progs()}
+async function addA(id){const n=prompt('Assessment name');if(!n)return;await sb.from('assessments').insert({course_id:id,name:n,max_score:prompt('Max score','100')||100});progs()}
+async function editP(id){const s=prompt('New start date (YYYY-MM-DD)'),e=prompt('New end date (YYYY-MM-DD)');await sb.from('programs').update({start_date:s||null,end_date:e||null}).eq('id',id);progs()}
+async function swaps(){const{data}=await sb.from('swaps').select('*,students(name)').order('created_at',{ascending:false});
+ $('#swl').innerHTML=`<table>${(data||[]).map(x=>`<tr><td>${esc(x.students?.name)} → <b>${esc(x.new_name)}</b><br><small>${esc(x.new_email)} ${esc(x.new_phone)}<br>${esc(x.reason)}</small></td><td>${tag(x.status)}</td><td>${x.status=='Pending'?`<button onclick="decide(${x.id},true)">Approve</button> <button onclick="decide(${x.id},false)" style="background:#9a1c1c">Reject</button>`:''}</td></tr>`).join('')}</table>`}
+async function decide(id,ok){const{data:x}=await sb.from('swaps').select('*').eq('id',id).single();
+ if(ok)await sb.from('students').update({name:x.new_name,email:x.new_email,phone:x.new_phone}).eq('id',x.student_id);
+ await sb.from('swaps').update({status:ok?'Approved':'Rejected'}).eq('id',id);swaps()}
+</script></body></html>

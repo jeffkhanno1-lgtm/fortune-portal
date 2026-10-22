@@ -1,0 +1,39 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fortune Academy – Partner Portal</title><link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script></head><body>
+<header><b>Fortune Academy · Partner Portal</b><button id="out" class="gold hide" onclick="signOut()">Log out</button></header><main>
+<div id="auth" class="card hide" style="max-width:380px;margin:40px auto"><h2>Partner Login</h2>
+<label>Email</label><input id="em" type="email"><label>Password</label><input id="pw" type="password">
+<button class="gold" onclick="signIn('partner',init)">Log in</button>
+<hr><p><b>New partner?</b> Organisation name</p><input id="org"><button onclick="signup()">Create account</button></div>
+<div id="app" class="hide"><nav><button data-t="reg">Register Student</button><button data-t="list">My Students</button><button data-t="prog">Student Progress</button><button data-t="swap">Swap Request</button></nav>
+<section id="reg" class="tab card"><h2>Register a student</h2><form id="f"><div class="grid">
+<div><label>Full name</label><input name="name" required></div><div><label>Email</label><input name="email" type="email" required></div>
+<div><label>Phone</label><input name="phone" required></div><div><label>DTC ID</label><input name="dtc_id" required></div></div>
+<label>Address</label><input name="address" required><label>Program</label><select name="program_id" id="prg" required></select>
+<button class="gold">Submit registration</button></form></section>
+<section id="list" class="tab card hide"><h2>My students</h2><div id="ls"></div></section>
+<section id="prog" class="tab card hide"><h2>Student progress</h2><select id="ps" onchange="progress()"></select><div id="pd"></div></section>
+<section id="swap" class="tab card hide"><h2>Request a student swap</h2><label>Student to replace</label><select id="ss"></select>
+<div class="grid"><div><label>New student name</label><input id="sn"></div><div><label>New email</label><input id="se"></div><div><label>New phone</label><input id="sp"></div></div>
+<label>Reason</label><textarea id="sr"></textarea><button class="gold" onclick="reqSwap()">Send request</button><h3>My requests</h3><div id="sw"></div></section></div></main>
+<script src="config.js"></script><script>
+let U,S=[];
+login('partner',init);
+async function signup(){const{error}=await sb.auth.signUp({email:$('#em').value,password:$('#pw').value,options:{data:{org:$('#org').value}}});toast(error?error.message:'Account created – now log in (check email if asked to confirm)')}
+async function init(u){U=u;$('#out').classList.remove('hide');await programOptions($('#prg'),'Select program');tabs(t=>{if(t!='reg')load()});
+ $('#f').onsubmit=async e=>{e.preventDefault();const r=Object.fromEntries(new FormData(e.target));const{error}=await sb.from('students').insert(r);if(error)return toast(error.message);e.target.reset();toast('Registered! Status: Submitted');load()}}
+async function load(){
+ const{data}=await sb.from('students').select('*,programs(name)').order('created_at',{ascending:false});S=data||[];
+ $('#ls').innerHTML=`<table><tr><th>Name</th><th>DTC ID</th><th>Program</th><th>Registered</th><th>Status</th><th>Final exam</th></tr>${S.map(s=>`<tr><td>${esc(s.name)}<br><small>${esc(s.email)}</small></td><td>${esc(s.dtc_id)}</td><td>${esc(s.programs?.name)}</td><td>${new Date(s.created_at).toLocaleDateString()}</td><td>${tag(s.status)}</td><td>${tag(s.final_exam)}</td></tr>`).join('')}</table>`;
+ const o=S.map(s=>`<option value="${s.id}">${esc(s.name)} (${esc(s.dtc_id)})</option>`).join('');$('#ps').innerHTML=o;$('#ss').innerHTML=o;progress();
+ const{data:w}=await sb.from('swaps').select('*,students(name)').order('created_at',{ascending:false});
+ $('#sw').innerHTML=(w||[]).map(x=>`<p>${esc(x.students?.name)} → ${esc(x.new_name)} ${tag(x.status)}</p>`).join('')||'<p>None yet</p>'}
+async function progress(){
+ const s=S.find(x=>x.id==$('#ps').value);if(!s){$('#pd').innerHTML='<p>No students yet.</p>';return}
+ const[{data:p},{data:c},{data:g}]=await Promise.all([sb.from('programs').select('*').eq('id',s.program_id).single(),sb.from('courses').select('*,assessments(*)').eq('program_id',s.program_id),sb.from('grades').select('*').eq('student_id',s.id)]);
+ const gm=Object.fromEntries((g||[]).map(x=>[x.assessment_id,x]));
+ $('#pd').innerHTML=`<p><b>${esc(p?.name)}</b> · ${p?.start_date||'TBA'} → ${p?.end_date||'TBA'}<br>Enrollment: ${tag(s.status)} Final exam: ${tag(s.final_exam)}</p><p>${esc(p?.outline)}</p>`+
+ (c||[]).map(k=>`<h3>${esc(k.name)}</h3><small>${esc(k.outline)}</small><table><tr><th>Assessment</th><th>Score</th><th>Grade</th></tr>${k.assessments.map(a=>{const r=gm[a.id];return`<tr><td>${esc(a.name)}</td><td>${r?.score??'–'} / ${a.max_score}</td><td>${esc(r?.grade||'Pending')}</td></tr>`}).join('')}</table>`).join('')}
+async function reqSwap(){const{error}=await sb.from('swaps').insert({student_id:$('#ss').value,new_name:$('#sn').value,new_email:$('#se').value,new_phone:$('#sp').value,reason:$('#sr').value});toast(error?error.message:'Swap request sent');load()}
+</script></body></html>
