@@ -1,28 +1,19 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fortune Academy – Partner Portal</title><link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script></head><body>
-<div id="auth" class="login hide"><div class="lb"><div class="lg"><img src="logo.png" alt="Fortune Academy"></div><h1>Partner Portal</h1>
-<p>Register students, track enrollment and follow every course, quiz and final exam in one place.</p>
-<ul><li>Register students one by one or in bulk with CSV</li><li>Live enrollment status and stage tracking</li><li>Course grades and final exam results</li><li>Direct support from the Fortune Academy team</li></ul></div>
-<div class="lf"><div><h2>Welcome back</h2><p class="mut">Sign in to your partner account</p>
+<title>Fortune Academy – Partner Portal</title><link rel="stylesheet" href="style.css?v=3">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><style>
+.hide{display:none!important}body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#f6f4f1}
+.lw{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#f6f4f1}
+.lc{background:#fff;border-radius:14px;padding:32px;width:100%;max-width:400px;box-sizing:border-box;box-shadow:0 6px 24px #0001;border-top:5px solid #bf5a00}
+.lc img{height:56px;display:block;margin:0 auto 16px}.lc h2{text-align:center;margin:0 0 4px;font-size:24px}.lc p{text-align:center;color:#6b7280;margin:0 0 16px}
+.lc input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d9d2ca;border-radius:8px;font:inherit;margin:4px 0 12px}
+.lc label{font-weight:600;font-size:13px}.lc button{width:100%;padding:11px;border:0;border-radius:8px;background:#bf5a00;color:#fff;font:inherit;font-weight:600;cursor:pointer}
+</style></head><body>
+<div id="auth" class="lw hide"><div class="lc"><img src="logo.png" alt="Fortune Academy"><h2>Partner Login</h2><p>Sign in to your partner account</p>
 <label>Email</label><input id="em" type="email" autocomplete="username"><label>Password</label><input id="pw" type="password" onkeydown="if(event.key=='Enter')signIn('partner',init)">
-<button class="gold" style="width:100%" onclick="signIn('partner',init)">Sign in</button>
-<div id="su" class="hide" style="margin-top:14px"><label>Organisation name</label><input id="org"><button class="ghost" style="width:100%" onclick="signup()">Create partner account</button></div>
-<p class="mut" style="text-align:center">New partner? <a href="#" onclick="$('#su').classList.toggle('hide');return false">Create an account</a></p></div></div></div>
-<div id="app" class="shell hide"><aside class="side"><div class="lg"><img src="logo.png" alt="Fortune Academy"></div><nav>
-<button data-t="dash" onclick="go('dash')">🏠 Dashboard</button><button data-t="reg" onclick="go('reg')">➕ Register Students</button><button data-t="list" onclick="go('list')">👥 My Students</button>
-<button data-t="prog" onclick="go('prog')">📈 Student Progress</button><button data-t="swap" onclick="go('swap')">🔁 Swap Request</button><button data-t="sup" onclick="go('sup')">💬 Support</button><button onclick="guide()">❓ Quick Guide</button></nav>
-<button class="lo" onclick="signOut()">⎋ Log out</button></aside>
-<div class="content"><div class="topbar"><h1 id="pt">Dashboard</h1><button class="chip" onclick="go('profile')" title="My profile"><span class="av" id="av"></span><span id="wh"></span></button></div>
-<section id="dash" class="tab"><div class="hero"><h2 id="hw"></h2><p id="hd"></p></div><div id="kp"></div>
-<div class="two"><div class="card"><h2>Registrations per month</h2><div id="mc"></div></div><div class="card"><h2>Registration calendar</h2><div id="cal"></div><p class="mut"><small>Highlighted days show when students were registered.</small></p></div></div>
-<div class="two"><div class="card"><h2>Student status</h2><div id="dd"></div></div><div class="card" id="guide"><h2>Quick guide – 5 steps</h2><ol class="steps">
-<li onclick="go('reg')"><div><b>Register your students</b><small>Add one student or upload many with a CSV file.</small></div></li>
-<li onclick="go('list')"><div><b>Check their status</b><small>My Students shows Submitted → Processed → Enrolled.</small></div></li>
-<li onclick="go('prog')"><div><b>Track progress</b><small>Student Progress shows each stage, courses and quiz scores.</small></div></li>
-<li onclick="go('swap')"><div><b>Fix or replace</b><small>Edit details in My Students or send a Swap Request.</small></div></li>
-<li onclick="go('sup')"><div><b>Need help?</b><small>Search the Support FAQs. Your account details are under Profile (top right).</small></div></li></ol></div></div>
-<div class="card"><h2>Recently registered</h2><div id="rc" style="overflow:auto"></div></div></section>
+<button onclick="signIn('partner',init)">Sign in</button>
+<div id="su" class="hide" style="margin-top:14px"><label>Organisation name</label><input id="org"><button style="background:#1c1c1c" onclick="signup()">Create partner account</button></div>
+<p style="margin:14px 0 0">New partner? <a href="#" onclick="$('#su').classList.toggle('hide');return false" style="color:#bf5a00;font-weight:600">Create an account</a></p></div></div>
+<div id="app" class="hide"><header><div class="hl2"><img src="logo.png" alt="Fortune Academy" style="height:44px"><span>PARTNER PORTAL</span></div><button class="chip" onclick="go('profile')" title="My profile"><span class="av" id="av"></span><span id="wh"></span></button></header><main><nav><button data-t="reg" onclick="go('reg')">Register Students</button><button data-t="list" onclick="go('list')">My Students</button><button data-t="prog" onclick="go('prog')">Student Progress</button><button data-t="swap" onclick="go('swap')">Swap Request</button><button data-t="sup" onclick="go('sup')">Support</button></nav>
 <section id="reg" class="tab hide"><div class="card"><h2>Register a student</h2><form id="f"><div class="grid">
 <div><label>Full name</label><input name="name" required></div><div><label>Email</label><input name="email" type="email" required></div>
 <div><label>Phone</label><input name="phone" required></div><div><label>ID</label><input name="dtc_id" required></div><div><label>Date of birth</label><input name="dob" type="date" required></div></div>
@@ -38,26 +29,19 @@
 <label>Reason</label><textarea id="sr"></textarea><button class="gold" onclick="reqSwap()">Send request</button></div><div class="card"><h2>My requests</h2><div id="sw"></div></div></section>
 <section id="sup" class="tab hide"><div class="card"><h2>Support – FAQs</h2><input id="fq" placeholder="Type your question…" oninput="faq()"><div id="fl"></div></div></section>
 <section id="profile" class="tab hide"><div class="card" id="pf"></div><div class="card"><h2>Change password</h2><input id="npw" type="password" placeholder="New password (min 6 characters)"><button class="gold" onclick="chpw()">Update password</button> <button class="red" onclick="signOut()">Log out</button></div></section>
-</div></div>
-<script src="config.js"></script><script>
+</main></div>
+<script src="config.js?v=3"></script><script>
 let U,PF={},S=[],PG=[],F=[],PD=[],GM={};
-const TT={dash:'Dashboard',reg:'Register Students',list:'My Students',prog:'Student Progress',swap:'Swap Request',sup:'Support',profile:'My Profile'};
 login('partner',init);
 const acc=(t,b,x='')=>`<div class="acc"><div class="hd" onclick="tg(this)"><span>${t}</span><span>${x}<i>+</i></span></div><div class="bd">${b}</div></div>`;
-async function go(t){document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('hide',s.id!=t));document.querySelectorAll('.side nav button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t==t));$('#pt').textContent=TT[t];window.scrollTo(0,0);
- if(['dash','list','prog','swap'].includes(t))await load();if(t=='dash')dash();if(t=='profile')prof()}
-function guide(){go('dash').then(()=>$('#guide').scrollIntoView({behavior:'smooth'}))}
+async function go(t){document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('hide',x.id!=t));document.querySelectorAll('nav button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t==t));window.scrollTo(0,0);
+ if(['list','prog','swap'].includes(t))await load();if(t=='profile')prof()}
 async function signup(){const{error}=await sb.auth.signUp({email:$('#em').value,password:$('#pw').value,options:{data:{org:$('#org').value}}});toast(error?error.message:'Account created – now sign in (check your email if asked to confirm)')}
 async function init(u){U=u;PF=(await sb.from('profiles').select('*').eq('id',u.id).single()).data||{};
  const nm=PF.org||u.email;$('#wh').textContent=nm;$('#av').innerHTML=PF.logo_url?`<img src="${esc(PF.logo_url)}">`:esc(nm[0].toUpperCase());
  F=(await sb.from('faqs').select('*').order('id')).data||[];faq();PG=(await sb.from('programs').select('id,name')).data||[];
  $('#sf').innerHTML='<option value="">All programs</option>'+PG.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');await programOptions($('#prg'),'Select program');
- $('#f').onsubmit=async e=>{e.preventDefault();const r=Object.fromEntries(new FormData(e.target));const{error}=await sb.from('students').insert(r);if(error)return toast(error.message);e.target.reset();toast('Registered! Status: Submitted');load()};go('dash')}
-function dash(){const k=stat(S);
- $('#hw').textContent='Welcome, '+(PF.org||'Partner')+' 👋';$('#hd').textContent=new Date().toLocaleDateString('en',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · here is how your students are doing.';
- $('#kp').innerHTML=cards([['Total students',k.t,'👥'],['In progress',k.prog,'📘','#2f7d32'],['Completed',k.done,'🎓','#1565c0'],['Awaiting enrollment',k.pend,'⏳','#c9a227'],['Registered this month',k.mon,'📅'],['Final exams passed',k.pass,'🏆','#6a1b9a']]);
- $('#mc').innerHTML=mchart(S.map(s=>s.created_at));CD=S.map(s=>s.created_at);CO=0;calDraw();$('#dd').innerHTML=dist(S);
- $('#rc').innerHTML=S.length?`<table><tr><th>Student</th><th>Program</th><th>Registered</th><th>Status</th></tr>${S.slice(0,5).map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.programs?.name)}</td><td>${new Date(s.created_at).toLocaleDateString()}</td><td>${tag(s.status)}</td></tr>`).join('')}</table>`:'<p>No students yet – open Register Students to add your first one.</p>'}
+ $('#f').onsubmit=async e=>{e.preventDefault();const r=Object.fromEntries(new FormData(e.target));const{error}=await sb.from('students').insert(r);if(error)return toast(error.message);e.target.reset();toast('Registered! Status: Submitted');load()};go('reg')}
 function prof(){const p=PF,f=(l,v)=>`<div><label>${l}</label><p style="margin:2px 0 12px">${esc(v)||'–'}</p></div>`;
  $('#pf').innerHTML=`<div class="pfh"><div class="av big">${p.logo_url?`<img src="${esc(p.logo_url)}">`:esc((p.org||'P')[0].toUpperCase())}</div><div><h2 style="margin:0">${esc(p.org)}</h2><span class="mut">Partner account</span></div></div><div class="grid">${f('Organisation',p.org)}${f('Contact person',p.contact_person)}${f('Contact email',p.contact_email)}${f('Phone',p.phone)}${f('Login email',U.email)}${f('Students registered',S.length)}</div><p class="mut"><small>To update these details or your logo, please contact Fortune Academy.</small></p>`}
 async function chpw(){const{error}=await sb.auth.updateUser({password:$('#npw').value});toast(error?error.message:'Password updated');if(!error)$('#npw').value=''}
