@@ -68,6 +68,10 @@ async function progress(){
  PD=(await sb.from('programs').select('*,courses(*,assessments(*))').in('id',[...new Set(S.map(s=>s.program_id))])).data||[];
  const G=(await sb.from('grades').select('*').in('student_id',S.map(s=>s.id))).data||[];GM={};G.forEach(x=>GM[x.student_id+'-'+x.assessment_id]=x);renderProg()}
 const ring=p=>`<svg class="ring" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" class="rb"/><circle cx="22" cy="22" r="18" class="rf" transform="rotate(-90 22 22)" style="stroke-dasharray:${p==null?0:p*1.131} 113.1"/><text x="22" y="25.5" text-anchor="middle">${p==null?'–':p+'%'}</text></svg>`;
+const pcts=(c,s)=>c.k.assessments.map(a=>{const r=GM[s.id+'-'+a.id];return r?.score!=null&&a.max_score>0?Math.round(r.score/a.max_score*100):null});
+const avgOf=v=>{const x=v.filter(y=>y!=null);return x.length?Math.round(x.reduce((t,y)=>t+y,0)/x.length):null};
+function report(c,s){const v=pcts(c,s),x=v.filter(y=>y!=null);
+ return`<div class="rsum">${ring(avgOf(v))}<div><b>Course average</b><div class="mut">${x.length}/${v.length} quizzes completed${x.length?' · Best '+Math.max(...x)+'% · Lowest '+Math.min(...x)+'%':''}</div></div></div><div class="qbars">${c.k.assessments.map((a,i)=>{const p=v[i],k=p==null?'':p>=90?'g':p>=75?'o':'r';return`<div class="qb"><b>${p==null?'–':p+'%'}</b><div class="qt"><div class="qf ${k}" style="height:${p||0}%"></div></div><small>${esc(a.name.replace(/^Quiz\s*/i,'Q'))}</small></div>`}).join('')}</div><div class="leg"><i class="g"></i>90%+ <i class="o"></i>75–89% <i class="r"></i>Below 75%</div>`}
 const STG=['Registered','Processed','Enrolled','Coursework','Final exam','Completed'];
 function stage(s,N,D){if(s.status=='Rejected')return -1;let i={Submitted:0,Processed:1,Enrolled:2,Completed:5}[s.status]??0;
  if(s.status=='Enrolled'){if(D>0)i=3;if((N>0&&D>=N)||s.final_exam=='Scheduled')i=4}if(s.final_exam=='Passed')i=5;return i}
@@ -82,13 +86,12 @@ function renderProg(){
   const N=cs.reduce((t,c)=>t+c.n,0),D=cs.reduce((t,c)=>t+c.done,0),i=stage(s,N,D);
   let pct=Math.round((D+(s.final_exam=='Passed'?1:0))/(N+1)*100);if(s.status=='Completed')pct=100;
   const mini=c=>`<div class="bar sm"><div style="width:${c.n?Math.round(c.done/c.n*100):0}%"></div></div>`;
-  const rings=c=>`<div class="rings">${c.k.assessments.map(a=>{const r=GM[s.id+'-'+a.id],v=r?.score!=null&&a.max_score>0?Math.round(r.score/a.max_score*100):null;return`<div class="rg">${ring(v)}<small>${esc(a.name)}</small></div>`}).join('')||'<p>No assessments yet.</p>'}</div>`;
   const stg=i<0?'<span class="tag bad">Rejected</span>':`<div class="stg">${STG.map((x,j)=>`<div class="${j<i||i==5?'d':j==i?'c':''}">${x}</div>`).join('')}</div>`;
   return`<div class="stu acc"><div class="hd" onclick="tg(this)"><div class="hl"><h3>${esc(s.name)}</h3><div class="pn">${esc(p.name)}</div><span class="now">${nowTxt(i,s,N,D)}</span>${stg}<div class="bar"><div style="width:${pct}%"></div></div><small class="mut">${pct}% complete</small></div><span><i>+</i></span></div>
-  <div class="bd"><div class="info"><div><label>ID</label><b>${esc(s.dtc_id)}</b></div><div><label>Date of birth</label><b>${s.dob||'–'}</b></div><div><label>Program start</label><b>${st.toLocaleDateString()}</b></div><div><label>Program end</label><b>${en.toLocaleDateString()}</b></div><div><label>Status</label>${tag(s.status)}</div><div><label>Final exam</label>${tag(s.final_exam)}</div></div>
+  <div class="bd"><div class="info"><div><label>ID</label><b>${esc(s.dtc_id)}</b></div><div><label>Date of birth</label><b>${s.dob||'–'}</b></div><div><label>Program start</label><b>${st.toLocaleDateString()}</b></div><div><label>Program end</label><b>${en.toLocaleDateString()}</b></div><div><label>Status</label>${tag(s.status)}</div><div><label>Final exam</label>${tag(s.final_exam)}</div><div><label>Average score</label><b>${(()=>{const a=avgOf(cs.flatMap(c=>pcts(c,s)));return a==null?'–':a+'%'})()}</b></div></div>
   ${acc('Assigned program – '+esc(p.name||''),`<div class="ol">${fmt(p.outline)}</div>`)}
   ${acc('Assigned courses ('+cs.length+')',cs.length?cs.map(c=>`<div class="crs"><span>${esc(c.k.name)}</span><small>${c.done}/${c.n} assessments graded</small>${mini(c)}</div>`).join(''):'<p>Courses will appear here once assigned.</p>')}
-  ${acc('Course grades',cs.length?cs.map(c=>acc(esc(c.k.name),rings(c),`<small>${c.done}/${c.n} graded</small> `)).join(''):'<p>No grades yet.</p>')}</div></div>`}).join('')}
+  ${acc('Course grades',cs.length?cs.map(c=>acc(esc(c.k.name),report(c,s),`<small>${c.done}/${c.n} graded${avgOf(pcts(c,s))!=null?' · avg '+avgOf(pcts(c,s))+'%':''}</small> `)).join(''):'<p>No grades yet.</p>')}</div></div>`}).join('')}
 function faq(){const q=$('#fq').value.toLowerCase();$('#fl').innerHTML=F.filter(f=>(f.question+f.answer).toLowerCase().includes(q)).map(f=>acc(esc(f.question),`<div class="ol">${fmt(f.answer)}</div>`)).join('')||'<p>No match – please contact Fortune Academy support.</p>'}
 async function reqSwap(){const{error}=await sb.from('swaps').insert({student_id:$('#ss').value,new_name:$('#sn').value,new_email:$('#se').value,new_phone:$('#sp').value,reason:$('#sr').value});toast(error?error.message:'Swap request sent');load()}
 </script></body></html>
