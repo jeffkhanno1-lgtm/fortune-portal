@@ -1,36 +1,66 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fortune Academy – Partner Portal</title><link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script></head><body>
-<header><div style="display:flex;align-items:center;gap:14px"><img src="logo.png" alt="Fortune Academy" style="height:44px"><span>PARTNER PORTAL</span><img id="pl" style="height:36px;display:none"></div><button id="out" class="gold hide" onclick="signOut()">Log out</button></header><main>
-<div id="auth" class="card hide" style="max-width:380px;margin:40px auto"><img src="logo.png" style="height:50px"><h2>Partner Login</h2>
-<label>Email</label><input id="em" type="email"><label>Password</label><input id="pw" type="password">
-<button class="gold" onclick="signIn('partner',init)">Log in</button>
-<hr><p><b>New partner?</b> Organisation name</p><input id="org"><button onclick="signup()">Create account</button></div>
-<div id="app" class="hide"><nav><button data-t="reg">Register Student</button><button data-t="list">My Students</button><button data-t="prog">Student Progress</button><button data-t="swap">Swap Request</button><button data-t="sup">Support</button></nav>
-<section id="reg" class="tab">
-<div class="card"><h2>Register a student</h2><form id="f"><div class="grid">
+<div id="auth" class="login hide"><div class="lb"><div class="lg"><img src="logo.png" alt="Fortune Academy"></div><h1>Partner Portal</h1>
+<p>Register students, track enrollment and follow every course, quiz and final exam in one place.</p>
+<ul><li>Register students one by one or in bulk with CSV</li><li>Live enrollment status and stage tracking</li><li>Course grades and final exam results</li><li>Direct support from the Fortune Academy team</li></ul></div>
+<div class="lf"><div><h2>Welcome back</h2><p class="mut">Sign in to your partner account</p>
+<label>Email</label><input id="em" type="email" autocomplete="username"><label>Password</label><input id="pw" type="password" onkeydown="if(event.key=='Enter')signIn('partner',init)">
+<button class="gold" style="width:100%" onclick="signIn('partner',init)">Sign in</button>
+<div id="su" class="hide" style="margin-top:14px"><label>Organisation name</label><input id="org"><button class="ghost" style="width:100%" onclick="signup()">Create partner account</button></div>
+<p class="mut" style="text-align:center">New partner? <a href="#" onclick="$('#su').classList.toggle('hide');return false">Create an account</a></p></div></div></div>
+<div id="app" class="shell hide"><aside class="side"><div class="lg"><img src="logo.png" alt="Fortune Academy"></div><nav>
+<button data-t="dash" onclick="go('dash')">🏠 Dashboard</button><button data-t="reg" onclick="go('reg')">➕ Register Students</button><button data-t="list" onclick="go('list')">👥 My Students</button>
+<button data-t="prog" onclick="go('prog')">📈 Student Progress</button><button data-t="swap" onclick="go('swap')">🔁 Swap Request</button><button data-t="sup" onclick="go('sup')">💬 Support</button><button onclick="guide()">❓ Quick Guide</button></nav>
+<button class="lo" onclick="signOut()">⎋ Log out</button></aside>
+<div class="content"><div class="topbar"><h1 id="pt">Dashboard</h1><button class="chip" onclick="go('profile')" title="My profile"><span class="av" id="av"></span><span id="wh"></span></button></div>
+<section id="dash" class="tab"><div class="hero"><h2 id="hw"></h2><p id="hd"></p></div><div id="kp"></div>
+<div class="two"><div class="card"><h2>Registrations per month</h2><div id="mc"></div></div><div class="card"><h2>Registration calendar</h2><div id="cal"></div><p class="mut"><small>Highlighted days show when students were registered.</small></p></div></div>
+<div class="two"><div class="card"><h2>Student status</h2><div id="dd"></div></div><div class="card" id="guide"><h2>Quick guide – 5 steps</h2><ol class="steps">
+<li onclick="go('reg')"><div><b>Register your students</b><small>Add one student or upload many with a CSV file.</small></div></li>
+<li onclick="go('list')"><div><b>Check their status</b><small>My Students shows Submitted → Processed → Enrolled.</small></div></li>
+<li onclick="go('prog')"><div><b>Track progress</b><small>Student Progress shows each stage, courses and quiz scores.</small></div></li>
+<li onclick="go('swap')"><div><b>Fix or replace</b><small>Edit details in My Students or send a Swap Request.</small></div></li>
+<li onclick="go('sup')"><div><b>Need help?</b><small>Search the Support FAQs. Your account details are under Profile (top right).</small></div></li></ol></div></div>
+<div class="card"><h2>Recently registered</h2><div id="rc" style="overflow:auto"></div></div></section>
+<section id="reg" class="tab hide"><div class="card"><h2>Register a student</h2><form id="f"><div class="grid">
 <div><label>Full name</label><input name="name" required></div><div><label>Email</label><input name="email" type="email" required></div>
 <div><label>Phone</label><input name="phone" required></div><div><label>ID</label><input name="dtc_id" required></div><div><label>Date of birth</label><input name="dob" type="date" required></div></div>
-<label>Address</label><input name="address" required><label>Program</label><select name="program_id" id="prg" required></select>
-<button class="gold">Submit registration</button></form></div>
+<label>Address</label><input name="address" required><label>Program</label><select name="program_id" id="prg" required></select><button class="gold">Submit registration</button></form></div>
 <div class="card"><h2>Bulk upload (CSV)</h2><p>1. Download the example file. 2. Fill in one student per row (<b>dob</b> as YYYY-MM-DD; the <b>program</b> must match a program name exactly). 3. Upload it here.</p>
-<button onclick="tpl()">⬇ Download example CSV</button><br><br><input type="file" id="bf" accept=".csv"><button class="gold" onclick="bulk()">Upload students</button><div id="br"></div></div></section>
-<section id="list" class="tab hide"><div id="ed" class="card hide"><h2>Edit student</h2><input type="hidden" id="ei"><div class="grid"><div><label>Full name</label><input id="en"></div><div><label>Email</label><input id="ee"></div><div><label>Phone</label><input id="ep"></div><div><label>ID</label><input id="eid"></div><div><label>Date of birth</label><input id="edob" type="date"></div><div><label>Address</label><input id="ea"></div></div><button class="gold" onclick="saveE()">Save changes</button> <button onclick="$('#ed').classList.add('hide')">Cancel</button><p><small>Fortune Academy is notified of every change.</small></p></div><div class="card"><h2>My students</h2><div id="ls" style="overflow:auto"></div></div></section>
-<section id="prog" class="tab hide"><h2>Student progress</h2><div class="filters"><input id="sq" placeholder="Search by student name, ID or program…" oninput="renderProg()"><select id="sf" onchange="renderProg()"></select></div><div id="pd"></div></section>
-<section id="swap" class="tab card hide"><h2>Request a student swap</h2><label>Student to replace</label><select id="ss"></select>
+<button class="ghost" onclick="tpl()">⬇ Download example CSV</button><br><br><input type="file" id="bf" accept=".csv"><button class="gold" onclick="bulk()">Upload students</button><div id="br"></div></div></section>
+<section id="list" class="tab hide"><div id="ed" class="card hide"><h2>Edit student</h2><input type="hidden" id="ei"><div class="grid"><div><label>Full name</label><input id="en"></div><div><label>Email</label><input id="ee"></div><div><label>Phone</label><input id="ep"></div><div><label>ID</label><input id="eid"></div><div><label>Date of birth</label><input id="edob" type="date"></div><div><label>Address</label><input id="ea"></div></div>
+<button class="gold" onclick="saveE()">Save changes</button> <button class="ghost" onclick="$('#ed').classList.add('hide')">Cancel</button><p class="mut"><small>Fortune Academy is notified of every change.</small></p></div>
+<div class="card"><h2>My students</h2><div id="ls" style="overflow:auto"></div></div></section>
+<section id="prog" class="tab hide"><div class="filters"><input id="sq" placeholder="Search by student name, ID or program…" oninput="renderProg()"><select id="sf" onchange="renderProg()"></select></div><div id="pd"></div></section>
+<section id="swap" class="tab hide"><div class="card"><h2>Request a student swap</h2><label>Student to replace</label><select id="ss"></select>
 <div class="grid"><div><label>New student name</label><input id="sn"></div><div><label>New email</label><input id="se"></div><div><label>New phone</label><input id="sp"></div></div>
-<label>Reason</label><textarea id="sr"></textarea><button class="gold" onclick="reqSwap()">Send request</button><h3>My requests</h3><div id="sw"></div></section>
-<section id="sup" class="tab card hide"><h2>Support – FAQs</h2><input id="fq" placeholder="Type your question…" oninput="faq()"><div id="fl"></div></section></div></main>
+<label>Reason</label><textarea id="sr"></textarea><button class="gold" onclick="reqSwap()">Send request</button></div><div class="card"><h2>My requests</h2><div id="sw"></div></div></section>
+<section id="sup" class="tab hide"><div class="card"><h2>Support – FAQs</h2><input id="fq" placeholder="Type your question…" oninput="faq()"><div id="fl"></div></div></section>
+<section id="profile" class="tab hide"><div class="card" id="pf"></div><div class="card"><h2>Change password</h2><input id="npw" type="password" placeholder="New password (min 6 characters)"><button class="gold" onclick="chpw()">Update password</button> <button class="red" onclick="signOut()">Log out</button></div></section>
+</div></div>
 <script src="config.js"></script><script>
-let U,S=[],PG=[],F=[];
+let U,PF={},S=[],PG=[],F=[],PD=[],GM={};
+const TT={dash:'Dashboard',reg:'Register Students',list:'My Students',prog:'Student Progress',swap:'Swap Request',sup:'Support',profile:'My Profile'};
 login('partner',init);
 const acc=(t,b,x='')=>`<div class="acc"><div class="hd" onclick="tg(this)"><span>${t}</span><span>${x}<i>+</i></span></div><div class="bd">${b}</div></div>`;
-async function signup(){const{error}=await sb.auth.signUp({email:$('#em').value,password:$('#pw').value,options:{data:{org:$('#org').value}}});toast(error?error.message:'Account created – now log in (check email if asked to confirm)')}
-async function init(u){U=u;
- const{data:pf}=await sb.from('profiles').select('logo_url').eq('id',u.id).single();if(pf?.logo_url){$('#pl').src=pf.logo_url;$('#pl').style.display=''}
- F=(await sb.from('faqs').select('*').order('id')).data||[];faq();PG=(await sb.from('programs').select('id,name')).data||[];$('#sf').innerHTML='<option value="">All programs</option>'+PG.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
- $('#out').classList.remove('hide');await programOptions($('#prg'),'Select program');tabs(t=>{if(t!='reg')load()});
- $('#f').onsubmit=async e=>{e.preventDefault();const r=Object.fromEntries(new FormData(e.target));const{error}=await sb.from('students').insert(r);if(error)return toast(error.message);e.target.reset();toast('Registered! Status: Submitted');load()}}
+async function go(t){document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('hide',s.id!=t));document.querySelectorAll('.side nav button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t==t));$('#pt').textContent=TT[t];window.scrollTo(0,0);
+ if(['dash','list','prog','swap'].includes(t))await load();if(t=='dash')dash();if(t=='profile')prof()}
+function guide(){go('dash').then(()=>$('#guide').scrollIntoView({behavior:'smooth'}))}
+async function signup(){const{error}=await sb.auth.signUp({email:$('#em').value,password:$('#pw').value,options:{data:{org:$('#org').value}}});toast(error?error.message:'Account created – now sign in (check your email if asked to confirm)')}
+async function init(u){U=u;PF=(await sb.from('profiles').select('*').eq('id',u.id).single()).data||{};
+ const nm=PF.org||u.email;$('#wh').textContent=nm;$('#av').innerHTML=PF.logo_url?`<img src="${esc(PF.logo_url)}">`:esc(nm[0].toUpperCase());
+ F=(await sb.from('faqs').select('*').order('id')).data||[];faq();PG=(await sb.from('programs').select('id,name')).data||[];
+ $('#sf').innerHTML='<option value="">All programs</option>'+PG.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');await programOptions($('#prg'),'Select program');
+ $('#f').onsubmit=async e=>{e.preventDefault();const r=Object.fromEntries(new FormData(e.target));const{error}=await sb.from('students').insert(r);if(error)return toast(error.message);e.target.reset();toast('Registered! Status: Submitted');load()};go('dash')}
+function dash(){const k=stat(S);
+ $('#hw').textContent='Welcome, '+(PF.org||'Partner')+' 👋';$('#hd').textContent=new Date().toLocaleDateString('en',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · here is how your students are doing.';
+ $('#kp').innerHTML=cards([['Total students',k.t,'👥'],['In progress',k.prog,'📘','#2f7d32'],['Completed',k.done,'🎓','#1565c0'],['Awaiting enrollment',k.pend,'⏳','#c9a227'],['Registered this month',k.mon,'📅'],['Final exams passed',k.pass,'🏆','#6a1b9a']]);
+ $('#mc').innerHTML=mchart(S.map(s=>s.created_at));CD=S.map(s=>s.created_at);CO=0;calDraw();$('#dd').innerHTML=dist(S);
+ $('#rc').innerHTML=S.length?`<table><tr><th>Student</th><th>Program</th><th>Registered</th><th>Status</th></tr>${S.slice(0,5).map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.programs?.name)}</td><td>${new Date(s.created_at).toLocaleDateString()}</td><td>${tag(s.status)}</td></tr>`).join('')}</table>`:'<p>No students yet – open Register Students to add your first one.</p>'}
+function prof(){const p=PF,f=(l,v)=>`<div><label>${l}</label><p style="margin:2px 0 12px">${esc(v)||'–'}</p></div>`;
+ $('#pf').innerHTML=`<div class="pfh"><div class="av big">${p.logo_url?`<img src="${esc(p.logo_url)}">`:esc((p.org||'P')[0].toUpperCase())}</div><div><h2 style="margin:0">${esc(p.org)}</h2><span class="mut">Partner account</span></div></div><div class="grid">${f('Organisation',p.org)}${f('Contact person',p.contact_person)}${f('Contact email',p.contact_email)}${f('Phone',p.phone)}${f('Login email',U.email)}${f('Students registered',S.length)}</div><p class="mut"><small>To update these details or your logo, please contact Fortune Academy.</small></p>`}
+async function chpw(){const{error}=await sb.auth.updateUser({password:$('#npw').value});toast(error?error.message:'Password updated');if(!error)$('#npw').value=''}
 function csv(t){const r=[];let row=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch=='"'){if(t[i+1]=='"'){c+='"';i++}else q=false}else c+=ch}else if(ch=='"')q=true;else if(ch==','){row.push(c);c=''}else if(ch=='\n'||ch=='\r'){if(ch=='\r'&&t[i+1]=='\n')i++;row.push(c);c='';if(row.some(x=>x.trim()))r.push(row);row=[]}else c+=ch}row.push(c);if(row.some(x=>x.trim()))r.push(row);return r}
 function tpl(){const p=PG[0]?.name||'Program Name';const t='name,email,phone,address,id,dob,program\nJohn Smith,john@example.com,0300 1234567,"12 Main Street, City",ID1001,1995-04-23,'+p+'\nJane Doe,jane@example.com,0300 7654321,"34 Park Road, City",ID1002,1998-11-02,'+p+'\n';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='student-upload-template.csv';a.click()}
 async function bulk(){const f=$('#bf').files[0];if(!f)return toast('Choose a CSV file first');
@@ -43,18 +73,21 @@ async function bulk(){const f=$('#bf').files[0];if(!f)return toast('Choose a CSV
  $('#br').innerHTML=`<p>✅ ${ok.length} student(s) registered.</p>`+(bad.length?`<p>⚠️ Skipped: ${bad.map(esc).join('; ')}</p>`:'');$('#bf').value='';load()}
 async function load(){
  const{data}=await sb.from('students').select('*,programs(name)').order('created_at',{ascending:false});S=data||[];
- $('#ls').innerHTML=`<table><tr><th>Name</th><th>ID</th><th>DOB</th><th>Program</th><th>Registered</th><th>Status</th><th>Final exam</th><th></th></tr>${S.map(s=>`<tr><td>${esc(s.name)}<br><small>${esc(s.email)}</small></td><td>${esc(s.dtc_id)}</td><td>${s.dob||'–'}</td><td>${esc(s.programs?.name)}</td><td>${new Date(s.created_at).toLocaleDateString()}</td><td>${tag(s.status)}</td><td>${tag(s.final_exam)}</td><td><button onclick="editS(${s.id})">✎ Edit</button></td></tr>`).join('')}</table>`;
- $('#ss').innerHTML=S.map(s=>`<option value="${s.id}">${esc(s.name)} (${esc(s.dtc_id)})</option>`).join('');progress();
+ $('#ls').innerHTML=`<table><tr><th>Name</th><th>ID</th><th>DOB</th><th>Program</th><th>Registered</th><th>Status</th><th>Final exam</th><th></th></tr>${S.map(s=>`<tr><td>${esc(s.name)}<br><small>${esc(s.email)}</small></td><td>${esc(s.dtc_id)}</td><td>${s.dob||'–'}</td><td>${esc(s.programs?.name)}</td><td>${new Date(s.created_at).toLocaleDateString()}</td><td>${tag(s.status)}</td><td>${tag(s.final_exam)}</td><td><button class="ghost" onclick="editS(${s.id})">✎ Edit</button></td></tr>`).join('')}</table>`;
+ $('#ss').innerHTML=S.map(s=>`<option value="${s.id}">${esc(s.name)} (${esc(s.dtc_id)})</option>`).join('');await progress();
  const{data:w}=await sb.from('swaps').select('*,students(name)').order('created_at',{ascending:false});
  $('#sw').innerHTML=(w||[]).map(x=>`<p>${esc(x.students?.name)} → ${esc(x.new_name)} ${tag(x.status)}</p>`).join('')||'<p>None yet</p>'}
-function editS(id){document.querySelector('[data-t=list]').click();const s=S.find(x=>x.id==id);if(!s)return;$('#ei').value=id;$('#en').value=s.name||'';$('#ee').value=s.email||'';$('#ep').value=s.phone||'';$('#eid').value=s.dtc_id||'';$('#edob').value=s.dob||'';$('#ea').value=s.address||'';$('#ed').classList.remove('hide');$('#ed').scrollIntoView()}
+function editS(id){go('list').then(()=>{const s=S.find(x=>x.id==id);if(!s)return;$('#ei').value=id;$('#en').value=s.name||'';$('#ee').value=s.email||'';$('#ep').value=s.phone||'';$('#eid').value=s.dtc_id||'';$('#edob').value=s.dob||'';$('#ea').value=s.address||'';$('#ed').classList.remove('hide');$('#ed').scrollIntoView()})}
 async function saveE(){const{error}=await sb.from('students').update({name:$('#en').value,email:$('#ee').value,phone:$('#ep').value,address:$('#ea').value,dtc_id:$('#eid').value,dob:$('#edob').value||null}).eq('id',$('#ei').value);if(error)return toast(error.message);toast('Saved – Fortune Academy has been notified');$('#ed').classList.add('hide');load()}
-let PD=[],GM={};
 async function progress(){
  if(!S.length){PD=[];GM={};return renderProg()}
  PD=(await sb.from('programs').select('*,courses(*,assessments(*))').in('id',[...new Set(S.map(s=>s.program_id))])).data||[];
  const G=(await sb.from('grades').select('*').in('student_id',S.map(s=>s.id))).data||[];GM={};G.forEach(x=>GM[x.student_id+'-'+x.assessment_id]=x);renderProg()}
 const ring=p=>`<svg class="ring" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" class="rb"/><circle cx="22" cy="22" r="18" class="rf" transform="rotate(-90 22 22)" style="stroke-dasharray:${p==null?0:p*1.131} 113.1"/><text x="22" y="25.5" text-anchor="middle">${p==null?'–':p+'%'}</text></svg>`;
+const STG=['Registered','Processed','Enrolled','Coursework','Final exam','Completed'];
+function stage(s,N,D){if(s.status=='Rejected')return -1;let i={Submitted:0,Processed:1,Enrolled:2,Completed:5}[s.status]??0;
+ if(s.status=='Enrolled'){if(D>0)i=3;if((N>0&&D>=N)||s.final_exam=='Scheduled')i=4}if(s.final_exam=='Passed')i=5;return i}
+const nowTxt=(i,s,N,D)=>i<0?'Application rejected':['Registered – awaiting processing','Processed – awaiting enrollment','Enrolled – courses assigned','In coursework – '+D+' of '+N+' assessments graded',s.final_exam=='Not Started'?'Coursework done – ready for final exam':'Final exam – '+s.final_exam,'Program completed ✓'][i];
 function renderProg(){
  const q=($('#sq').value||'').toLowerCase(),pf=$('#sf').value;
  const L=S.filter(s=>(!pf||s.program_id==pf)&&(!q||(s.name+' '+s.dtc_id+' '+(s.programs?.name||'')).toLowerCase().includes(q)));
@@ -62,13 +95,15 @@ function renderProg(){
  $('#pd').innerHTML=L.map(s=>{
   const p=PD.find(x=>x.id==s.program_id)||{courses:[]},st=new Date(s.created_at),en=new Date(st);en.setFullYear(st.getFullYear()+1);
   const cs=p.courses.map(k=>({k,n:k.assessments.length,done:k.assessments.filter(a=>GM[s.id+'-'+a.id]?.score!=null).length}));
-  const n=cs.reduce((t,c)=>t+c.n,0)+1,d=cs.reduce((t,c)=>t+c.done,0)+(s.final_exam=='Passed'?1:0),pct=Math.round(d/n*100);
+  const N=cs.reduce((t,c)=>t+c.n,0),D=cs.reduce((t,c)=>t+c.done,0),i=stage(s,N,D);
+  let pct=Math.round((D+(s.final_exam=='Passed'?1:0))/(N+1)*100);if(s.status=='Completed')pct=100;
   const mini=c=>`<div class="bar sm"><div style="width:${c.n?Math.round(c.done/c.n*100):0}%"></div></div>`;
   const rings=c=>`<div class="rings">${c.k.assessments.map(a=>{const r=GM[s.id+'-'+a.id],v=r?.score!=null&&a.max_score>0?Math.round(r.score/a.max_score*100):null;return`<div class="rg">${ring(v)}<small>${esc(a.name)}</small></div>`}).join('')||'<p>No assessments yet.</p>'}</div>`;
-  return`<div class="stu acc"><div class="hd" onclick="tg(this)"><div class="hl"><h3>${esc(s.name)}</h3><div class="pn">${esc(p.name)}</div><div class="bar"><div style="width:${pct}%"></div></div><small>${pct}% complete</small></div><span>${tag(s.status)} <i>+</i></span></div>
-  <div class="bd"><p>ID: <b>${esc(s.dtc_id)}</b> · DOB: ${s.dob||'–'} · Start: <b>${st.toLocaleDateString()}</b> · End: <b>${en.toLocaleDateString()}</b><br>Final exam: ${tag(s.final_exam)}</p><button onclick="editS(${s.id})">✎ Edit details</button>
-  ${acc('Outline',`<div class="ol">${fmt(p.outline)}</div>`)}
-  ${acc('Courses included ('+cs.length+')',cs.length?cs.map(c=>`<div class="crs"><span>${esc(c.k.name)}</span><small>${c.done}/${c.n} assessments</small>${mini(c)}</div>`).join(''):'<p>Courses will appear here once added.</p>')}
+  const stg=i<0?'<span class="tag bad">Rejected</span>':`<div class="stg">${STG.map((x,j)=>`<div class="${j<i||i==5?'d':j==i?'c':''}">${x}</div>`).join('')}</div>`;
+  return`<div class="stu acc"><div class="hd" onclick="tg(this)"><div class="hl"><h3>${esc(s.name)}</h3><div class="pn">${esc(p.name)}</div><span class="now">${nowTxt(i,s,N,D)}</span>${stg}<div class="bar"><div style="width:${pct}%"></div></div><small class="mut">${pct}% complete</small></div><span><i>+</i></span></div>
+  <div class="bd"><div class="info"><div><label>ID</label><b>${esc(s.dtc_id)}</b></div><div><label>Date of birth</label><b>${s.dob||'–'}</b></div><div><label>Program start</label><b>${st.toLocaleDateString()}</b></div><div><label>Program end</label><b>${en.toLocaleDateString()}</b></div><div><label>Status</label>${tag(s.status)}</div><div><label>Final exam</label>${tag(s.final_exam)}</div></div>
+  ${acc('Assigned program – '+esc(p.name||''),`<div class="ol">${fmt(p.outline)}</div>`)}
+  ${acc('Assigned courses ('+cs.length+')',cs.length?cs.map(c=>`<div class="crs"><span>${esc(c.k.name)}</span><small>${c.done}/${c.n} assessments graded</small>${mini(c)}</div>`).join(''):'<p>Courses will appear here once assigned.</p>')}
   ${acc('Course grades',cs.length?cs.map(c=>acc(esc(c.k.name),rings(c),`<small>${c.done}/${c.n} graded</small> `)).join(''):'<p>No grades yet.</p>')}</div></div>`}).join('')}
 function faq(){const q=$('#fq').value.toLowerCase();$('#fl').innerHTML=F.filter(f=>(f.question+f.answer).toLowerCase().includes(q)).map(f=>acc(esc(f.question),`<div class="ol">${fmt(f.answer)}</div>`)).join('')||'<p>No match – please contact Fortune Academy support.</p>'}
 async function reqSwap(){const{error}=await sb.from('swaps').insert({student_id:$('#ss').value,new_name:$('#sn').value,new_email:$('#se').value,new_phone:$('#sp').value,reason:$('#sr').value});toast(error?error.message:'Swap request sent');load()}
