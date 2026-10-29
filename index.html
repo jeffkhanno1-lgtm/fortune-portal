@@ -13,7 +13,8 @@
 <button onclick="signIn('partner',init)">Sign in</button>
 <div id="su" class="hide" style="margin-top:14px"><label>Organisation name</label><input id="org"><button style="background:#1c1c1c" onclick="signup()">Create partner account</button></div>
 <p style="margin:14px 0 0">New partner? <a href="#" onclick="$('#su').classList.toggle('hide');return false" style="color:#bf5a00;font-weight:600">Create an account</a></p></div></div>
-<div id="app" class="hide"><header><div class="hl2"><img src="logo.png" alt="Fortune Academy" style="height:44px"><span>PARTNER PORTAL</span></div><button class="chip" onclick="go('profile')" title="My profile"><span class="av" id="av"></span><span id="wh"></span></button></header><main><nav><button data-t="reg" onclick="go('reg')">Register Students</button><button data-t="list" onclick="go('list')">My Students</button><button data-t="prog" onclick="go('prog')">Student Progress</button><button data-t="swap" onclick="go('swap')">Swap Request</button><button data-t="sup" onclick="go('sup')">Support</button></nav>
+<div id="app" class="hide"><header><div class="hl2"><img src="logo.png" alt="Fortune Academy" style="height:44px"><span>PARTNER PORTAL</span></div><button class="chip" onclick="go('profile')" title="My profile"><span class="av" id="av"></span><span id="wh"></span></button></header><main><nav><button data-t="act" id="nact" onclick="go('act')">Actions</button><button data-t="reg" onclick="go('reg')">Register Students</button><button data-t="list" onclick="go('list')">My Students</button><button data-t="prog" onclick="go('prog')">Student Progress</button><button data-t="swap" onclick="go('swap')">Swap Request</button><button data-t="sup" onclick="go('sup')">Support</button></nav>
+<section id="act" class="tab"><div class="card"><h2>Your actions</h2><p class="mut">Tasks assigned by Fortune Academy, listed by due date. Tick the box when you have completed one.</p><div id="actl"></div></div></section>
 <section id="reg" class="tab hide"><div class="card"><h2>Register a student</h2><form id="f"><div class="grid">
 <div><label>Full name</label><input name="name" required></div><div><label>Email</label><input name="email" type="email" required></div>
 <div><label>Phone</label><input name="phone" required></div><div><label>ID</label><input name="dtc_id" required></div><div><label>Date of birth</label><input name="dob" type="date" required></div></div>
@@ -35,13 +36,13 @@ let U,PF={},S=[],PG=[],F=[],PD=[],GM={};
 login('partner',init);
 const acc=(t,b,x='')=>`<div class="acc"><div class="hd" onclick="tg(this)"><span>${t}</span><span>${x}<i>+</i></span></div><div class="bd">${b}</div></div>`;
 async function go(t){document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('hide',x.id!=t));document.querySelectorAll('nav button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t==t));window.scrollTo(0,0);
- if(['list','prog','swap'].includes(t))await load();if(t=='profile')prof()}
+ if(['list','prog','swap'].includes(t))await load();if(t=='act')await acts();if(t=='profile')prof()}
 async function signup(){const{error}=await sb.auth.signUp({email:$('#em').value,password:$('#pw').value,options:{data:{org:$('#org').value}}});toast(error?error.message:'Account created – now sign in (check your email if asked to confirm)')}
 async function init(u){U=u;PF=(await sb.from('profiles').select('*').eq('id',u.id).single()).data||{};
  const nm=PF.org||u.email;$('#wh').textContent=nm;$('#av').innerHTML=PF.logo_url?`<img src="${esc(PF.logo_url)}">`:esc(nm[0].toUpperCase());
  F=(await sb.from('faqs').select('*').order('id')).data||[];faq();PG=(await sb.from('programs').select('id,name')).data||[];
  $('#sf').innerHTML='<option value="">All programs</option>'+PG.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');await programOptions($('#prg'),'Select program');
- $('#f').onsubmit=async e=>{e.preventDefault();const r=Object.fromEntries(new FormData(e.target));const{error}=await sb.from('students').insert(r);if(error)return toast(error.message);e.target.reset();toast('Registered! Status: Submitted');load()};go('reg')}
+ $('#f').onsubmit=async e=>{e.preventDefault();const r=Object.fromEntries(new FormData(e.target));const{error}=await sb.from('students').insert(r);if(error)return toast(error.message);e.target.reset();toast('Registered! Status: Submitted');load()};go('act')}
 function prof(){const p=PF,f=(l,v)=>`<div><label>${l}</label><p style="margin:2px 0 12px">${esc(v)||'–'}</p></div>`;
  $('#pf').innerHTML=`<div class="pfh"><div class="av big">${p.logo_url?`<img src="${esc(p.logo_url)}">`:esc((p.org||'P')[0].toUpperCase())}</div><div><h2 style="margin:0">${esc(p.org)}</h2><span class="mut">Partner account</span></div></div><div class="grid">${f('Organisation',p.org)}${f('Contact person',p.contact_person)}${f('Contact email',p.contact_email)}${f('Phone',p.phone)}${f('Login email',U.email)}${f('Students registered',S.length)}</div><p class="mut"><small>To update these details or your logo, please contact Fortune Academy.</small></p>`}
 async function chpw(){const{error}=await sb.auth.updateUser({password:$('#npw').value});toast(error?error.message:'Password updated');if(!error)$('#npw').value=''}
@@ -92,6 +93,13 @@ function renderProg(){
   ${acc('Assigned program – '+esc(p.name||''),`<div class="ol">${fmt(p.outline)}</div>`)}
   ${acc('Assigned courses ('+cs.length+')',cs.length?cs.map(c=>`<div class="crs"><span>${esc(c.k.name)}</span><small>${c.done}/${c.n} assessments graded</small>${mini(c)}</div>`).join(''):'<p>Courses will appear here once assigned.</p>')}
   ${acc('Course grades',cs.length?cs.map(c=>acc(esc(c.k.name),report(c,s),`<small>${c.done}/${c.n} graded${avgOf(pcts(c,s))!=null?' · avg '+avgOf(pcts(c,s))+'%':''}</small> `)).join(''):'<p>No grades yet.</p>')}</div></div>`}).join('')}
+async function acts(){
+ const A=(await sb.from('actions').select('*').order('due_date',{ascending:true,nullsFirst:false})).data||[];
+ const pend=A.filter(a=>a.status!='Completed'),done=A.filter(a=>a.status=='Completed');$('#nact').textContent='Actions'+(pend.length?' ('+pend.length+')':'');
+ const od=a=>a.due_date&&new Date(a.due_date+'T23:59:59')<new Date();
+ const row=a=>`<label class="arow ${a.status=='Completed'?'done':''}"><input type="checkbox" ${a.status=='Completed'?'checked':''} onchange="tick(${a.id},this.checked)"><div><b>${esc(a.title)}</b>${a.details?`<div class="ol">${fmt(a.details)}</div>`:''}<small class="mut">Due: ${a.due_date?new Date(a.due_date+'T00:00:00').toLocaleDateString():'No date'}</small> ${a.status=='Completed'?tag('Completed'):od(a)?'<span class="tag bad">Overdue</span>':'<span class="tag">Pending</span>'}</div></label>`;
+ $('#actl').innerHTML=(pend.length?pend.map(row).join(''):'<p>🎉 Nothing pending – you are all caught up.</p>')+(done.length?'<h3 style="margin-top:22px">Completed</h3>'+done.map(row).join(''):'')}
+async function tick(id,c){const{error}=await sb.from('actions').update({status:c?'Completed':'Pending'}).eq('id',id);toast(error?error.message:c?'Marked completed':'Marked pending');acts()}
 function faq(){const q=$('#fq').value.toLowerCase();$('#fl').innerHTML=F.filter(f=>(f.question+f.answer).toLowerCase().includes(q)).map(f=>acc(esc(f.question),`<div class="ol">${fmt(f.answer)}</div>`)).join('')||'<p>No match – please contact Fortune Academy support.</p>'}
 async function reqSwap(){const{error}=await sb.from('swaps').insert({student_id:$('#ss').value,new_name:$('#sn').value,new_email:$('#se').value,new_phone:$('#sp').value,reason:$('#sr').value});toast(error?error.message:'Swap request sent');load()}
 </script></body></html>

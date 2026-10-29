@@ -11,7 +11,10 @@
 <div id="auth" class="lw hide"><div class="lc"><img src="logo.png" alt="Fortune Academy"><h2>Admin Login</h2><p>Fortune Academy team only</p>
 <label>Email</label><input id="em" type="email" autocomplete="username"><label>Password</label><input id="pw" type="password" onkeydown="if(event.key=='Enter')signIn('admin',init)">
 <button onclick="signIn('admin',init)">Sign in</button></div></div>
-<div id="app" class="hide"><header><div class="hl2"><img src="logo.png" alt="Fortune Academy" style="height:44px"><span>ADMIN</span></div><button class="gold" onclick="signOut()">Log out</button></header><main><nav><button data-t="st">👥 Students</button><button data-t="gr">📝 Grades</button><button data-t="pr">📚 Programs & Courses</button><button data-t="sw">🔁 Swap Requests</button><button data-t="pa">🤝 Partners</button><button data-t="fa">💬 Support FAQs</button><button data-t="nt" id="nb">🔔 Notifications</button></nav>
+<div id="app" class="hide"><header><div class="hl2"><img src="logo.png" alt="Fortune Academy" style="height:44px"><span>ADMIN</span></div><button class="gold" onclick="signOut()">Log out</button></header><main><nav><button data-t="ac" id="nac">⚡ Actions</button><button data-t="st">👥 Students</button><button data-t="gr">📝 Grades</button><button data-t="pr">📚 Programs & Courses</button><button data-t="sw">🔁 Swap Requests</button><button data-t="pa">🤝 Partners</button><button data-t="fa">💬 Support FAQs</button><button data-t="nt" id="nb">🔔 Notifications</button></nav>
+<section id="ac" class="tab hide"><div id="ak"></div><div id="alist"></div>
+<div class="card"><h2>Assign an action to partners</h2><div class="grid"><div><label>Partner</label><select id="apt"></select></div><div><label>Due date</label><input id="adt" type="date"></div></div><label>Action title</label><input id="att"><label>Details (optional – start a line with - for bullets)</label><textarea id="atd" rows="3"></textarea><button class="gold" onclick="addAct()">Create action</button></div>
+<div class="card"><h2>Partner actions</h2><div id="aal" style="overflow:auto"></div></div></section>
 <section id="st" class="tab card"><h2>Students</h2><div id="stl" style="overflow:auto"></div></section>
 <section id="gr" class="tab card hide"><h2>Grades</h2><select id="gs" onchange="gload()"></select><div id="gd"></div></section>
 <section id="pr" class="tab card hide"><h2>Programs</h2><div class="grid"><div><label>Name</label><input id="pn"></div><div style="grid-column:1/-1"><label>Program outline (start a line with - for bullets)</label><textarea id="po" rows="16"></textarea></div><p style="grid-column:1/-1"><small>Each student's program runs 1 year from their registration date. Start and end dates show automatically to partners.</small></p></div><button class="gold" id="pb" onclick="addProg()">Add program</button><h3>Add a course</h3><label>Program</label><select id="pc"></select><label>Course name</label><input id="cn"><button class="gold" onclick="addCourse()">Add course</button><div id="pl"></div></section>
@@ -20,7 +23,7 @@
 const STAT=['Submitted','Processed','Enrolled','Completed','Rejected'],EX=['Not Started','Scheduled','Passed','Failed'];
 let ST=[];login('admin',init);
 const opt=(a,v)=>a.map(x=>`<option ${x==v?'selected':''}>${x}</option>`).join('');
-function init(u){setInterval(notes,30000);tabs(()=>{stud();progs();swaps();partners();faqs();notes()})}
+function init(u){setInterval(notes,30000);tabs(()=>{stud();progs();swaps();partners();faqs();notes();actionsA()})}
 async function stud(){const{data}=await sb.from('students').select('*,programs(name),profiles(org)').order('created_at',{ascending:false});ST=data||[];
  $('#stl').innerHTML=`<table><tr><th>Partner</th><th>Name</th><th>Email</th><th>Phone</th><th>ID</th><th>DOB</th><th>Program</th><th>Status</th><th>Final exam</th><th></th></tr>${ST.map(s=>`<tr id="r${s.id}"><td>${esc(s.profiles?.org)}</td>${['name','email','phone','dtc_id','dob'].map(k=>`<td><input data-k="${k}" ${k=='dob'?'type="date"':''} value="${esc(s[k])}"></td>`).join('')}<td>${esc(s.programs?.name)}</td><td><select data-k="status">${opt(STAT,s.status)}</select></td><td><select data-k="final_exam">${opt(EX,s.final_exam)}</select></td><td><button onclick="saveS(${s.id})">Save</button> <button onclick="delS(${s.id})" style="background:#9a1c1c">✕</button></td></tr>`).join('')}</table>`;
  $('#gs').innerHTML=ST.map(s=>`<option value="${s.id}">${esc(s.name)} (${esc(s.dtc_id)})</option>`).join('');gload()}
@@ -59,4 +62,34 @@ async function notes(){const{data}=await sb.from('notifications').select('*').or
  $('#ntl').innerHTML=(data||[]).map(n=>`<div class="note ${n.is_read?'':'new'}"><div>${esc(n.message)}<br><small>${new Date(n.created_at).toLocaleString()}</small></div>${n.is_read?'':`<button onclick="rd(${n.id})">Mark read</button>`}</div>`).join('')||'<p>No notifications yet.</p>'}
 async function rd(id){await sb.from('notifications').update({is_read:true}).eq('id',id);notes()}
 async function readAll(){await sb.from('notifications').update({is_read:true}).eq('is_read',false);notes()}
+async function actionsA(){
+ const[{data:S},{data:W},{data:N},{data:A0},{data:P}]=await Promise.all([
+  sb.from('students').select('id,name,status,final_exam,created_at,partner_id,programs(name)').order('created_at',{ascending:false}),
+  sb.from('swaps').select('*,students(name)').eq('status','Pending').order('created_at'),
+  sb.from('notifications').select('*').eq('is_read',false).order('created_at',{ascending:false}).limit(20),
+  sb.from('actions').select('*'),sb.from('profiles').select('id,org').eq('role','partner').order('org')]);
+ const PM={};(P||[]).forEach(p=>PM[p.id]=p.org);const org=id=>esc(PM[id]||'–'),dt=x=>new Date(x).toLocaleDateString();
+ const sub=(S||[]).filter(s=>s.status=='Submitted'),ex=(S||[]).filter(s=>s.final_exam=='Scheduled'),sw=W||[],ch=N||[];
+ const A=(A0||[]).sort((x,y)=>(x.status=='Completed')-(y.status=='Completed')||String(x.due_date||'9999').localeCompare(String(y.due_date||'9999')));
+ const od=a=>a.due_date&&a.status!='Completed'&&new Date(a.due_date+'T23:59:59')<new Date(),pend=A.filter(a=>a.status!='Completed');
+ const total=sub.length+sw.length+ch.length+ex.length;$('#nac').textContent='⚡ Actions'+(total?' ('+total+')':'');
+ $('#ak').innerHTML=cards([['New registrations',sub.length,'📝'],['Swap requests',sw.length,'🔁','#c9a227'],['Partner changes',ch.length,'🔔','#9a1c1c'],['Exams scheduled',ex.length,'🎯','#6a1b9a'],['Partner actions pending',pend.length+(pend.filter(od).length?' ('+pend.filter(od).length+' overdue)':''),'⏳','#2f7d32']]);
+ const sec=(t,rows,empty)=>`<div class="card"><h2>${t}</h2>${rows.length?rows.join(''):`<p class="mut">${empty}</p>`}</div>`;
+ $('#alist').innerHTML=
+  sec('📝 New registrations to process',sub.map(s=>`<div class="note"><div><b>${esc(s.name)}</b> · ${esc(s.programs?.name)}<br><small>${org(s.partner_id)} · registered ${dt(s.created_at)}</small></div><button class="gold" onclick="setStat(${s.id},'Processed')">Mark processed</button></div>`),'Nothing waiting – all registrations are processed.')+
+  sec('🔁 Swap requests to review',sw.map(x=>`<div class="note"><div><b>${esc(x.students?.name)}</b> → ${esc(x.new_name)}<br><small>${org(x.partner_id)} · ${esc(x.reason)}</small></div><div><button class="gold" onclick="decideA(${x.id},true)">Approve</button> <button class="red" onclick="decideA(${x.id},false)">Reject</button></div></div>`),'No pending swap requests.')+
+  sec('🔔 Changes made by partners',ch.map(n=>`<div class="note new"><div>${esc(n.message)}<br><small>${new Date(n.created_at).toLocaleString()}</small></div><button onclick="rdA(${n.id})">Mark read</button></div>`),'No unread changes.')+
+  sec('🎯 Final exams scheduled – record the result',ex.map(s=>`<div class="note"><div><b>${esc(s.name)}</b> · ${esc(s.programs?.name)}<br><small>${org(s.partner_id)}</small></div><div><button class="gold" onclick="setExam(${s.id},'Passed')">Passed</button> <button class="red" onclick="setExam(${s.id},'Failed')">Failed</button></div></div>`),'No exams waiting for a result.');
+ const cur=$('#apt').value;$('#apt').innerHTML='<option value="all">All partners</option>'+(P||[]).map(p=>`<option value="${p.id}">${esc(p.org)}</option>`).join('');if(cur)$('#apt').value=cur;
+ $('#aal').innerHTML=A.length?`<table><tr><th>Partner</th><th>Action</th><th>Due</th><th>Status</th><th></th></tr>${A.map(a=>`<tr><td>${org(a.partner_id)}</td><td><b>${esc(a.title)}</b><div class="ol">${fmt(a.details)}</div></td><td>${a.due_date?dt(a.due_date+'T00:00:00'):'–'}</td><td>${a.status=='Completed'?tag('Completed')+'<br><small>'+(a.completed_at?dt(a.completed_at):'')+'</small>':od(a)?'<span class="tag bad">Overdue</span>':'<span class="tag">Pending</span>'}</td><td><button class="ghost" onclick="togA(${a.id},'${a.status=='Completed'?'Pending':'Completed'}')">${a.status=='Completed'?'Reopen':'Mark done'}</button> <button class="red" onclick="delA(${a.id})">✕</button></td></tr>`).join('')}</table>`:'<p class="mut">No actions created yet.</p>'}
+async function setStat(id,v){const{error}=await sb.from('students').update({status:v}).eq('id',id);toast(error?error.message:'Updated');actionsA()}
+async function setExam(id,v){const o={final_exam:v};if(v=='Passed')o.status='Completed';const{error}=await sb.from('students').update(o).eq('id',id);toast(error?error.message:'Exam result saved');actionsA()}
+async function decideA(id,ok){await decide(id,ok);actionsA()}
+async function rdA(id){await sb.from('notifications').update({is_read:true}).eq('id',id);actionsA();notes()}
+async function addAct(){const t=$('#att').value.trim();if(!t)return toast('Enter an action title');const pid=$('#apt').value;
+ const{data:P}=await sb.from('profiles').select('id').eq('role','partner');const ids=pid=='all'?(P||[]).map(p=>p.id):[pid];if(!ids.length)return toast('No partners yet');
+ const{error}=await sb.from('actions').insert(ids.map(id=>({partner_id:id,title:t,details:$('#atd').value,due_date:$('#adt').value||null})));
+ toast(error?error.message:'Action assigned to '+ids.length+' partner(s)');if(!error){$('#att').value='';$('#atd').value='';$('#adt').value=''}actionsA()}
+async function togA(id,v){const{error}=await sb.from('actions').update({status:v}).eq('id',id);toast(error?error.message:'Updated');actionsA()}
+async function delA(id){if(confirm('Delete this action?')){await sb.from('actions').delete().eq('id',id);actionsA()}}
 </script></body></html>
