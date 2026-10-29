@@ -1,6 +1,6 @@
 // PASTE YOUR VALUES (Supabase > Project Settings > API)
 const SUPABASE_URL='https://tttvdtljwobjhdgsueko.supabase.co', SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0dHZkdGxqd29iamhkZ3N1ZWtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2ODAyMDcsImV4cCI6MjEwODI1NjIwN30.yQpXLfLxeoj-UMzEsHYHFqoY-DA5QkXKK3PQca9WgrI';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{storageKey:location.pathname.endsWith('admin.html')?'fa-admin-session':'fa-partner-session'}});
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const tagc=s=>/Enrolled|Completed|Processed|Passed|Approved/.test(s)?'ok':/Reject|Failed/.test(s)?'bad':'';
